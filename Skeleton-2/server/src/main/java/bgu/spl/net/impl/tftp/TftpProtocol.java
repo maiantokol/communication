@@ -14,6 +14,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static bgu.spl.net.impl.tftp.TftpEncoderDecoder.printBytesInShortFormat;
+
 public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
 
     
@@ -32,6 +34,8 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
     @Override
     public void start(int connectionId, Connections<byte[]> connections) 
     {
+        System.out.println("[start] connectionId: "+connectionId);
+        System.out.println("[start] connections: "+connections.toString());
         this.connectionId = connectionId;
         this.connections = connections;
         this.isLoggedIn = false;
@@ -46,26 +50,25 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         short opcode = getOpCode(message);
         switch (opcode) {
             case 1: // RRQ
-            if (firstMessage) 
-               {
-                byte[] responsePacket = ReadRequestPacket.handleReadAndGetResponse(message, isLoggedIn);
-                if (responsePacket != null) 
-                {
-                    connections.send(connectionId, responsePacket);
-                    // Assuming handleReadAndGetResponse initiates a session and stores it as a class member
-                    firstMessage = false;
+                if (firstMessage)
+                   {
+                    byte[] responsePacket = ReadRequestPacket.handleReadAndGetResponse(message, isLoggedIn);
+                    if (responsePacket != null)
+                    {
+                        connections.send(connectionId, responsePacket);
+                        // Assuming handleReadAndGetResponse initiates a session and stores it as a class member
+                        firstMessage = false;
+                    }
                 }
-            }
 
             //TODO: return an error
 
             case 2: // WRQ
-            connections.send(connectionId, WriteRequsetPacket.handleWriteAndGetResponse(message, isLoggedIn));
+                connections.send(connectionId, WriteRequsetPacket.handleWriteAndGetResponse(message, isLoggedIn));
 
 
             case 3: // DATA
-
-            connections.send(connectionId, DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn,connections,connectedUsersIDS));
+                connections.send(connectionId, DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn,connections,connectedUsersIDS));
 
             case 4: // ACK packet
                 // ACK packet  2 bytes for the opcode + 2 bytes for the block number
@@ -83,24 +86,26 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                 } catch (Exception e) {
                     e.printStackTrace();
                     // Handle error, maybe send an error packet back???????????
+                    }
                 }
-            }
-            //TODO: ELSE???
-            break;
-                
-             
             case 5: // ERROR packet
             case 6: // DIRQ
-            connections.send(connectionId, DirqPacket.createDirqResponse(isLoggedIn));
+                connections.send(connectionId, DirqPacket.createDirqResponse(isLoggedIn));
 
             case 7: // LOGRQ
-                System.out.println("in logrq. message is: "+message);
+                System.out.println("in logrq, got message");
+                printBytesInShortFormat(message);
                 byte[] responsePacket = LoginRequestPacket.handleLoginAndGetResponse(message);
+                System.out.println("in logrq, response packet is");
+                printBytesInShortFormat(responsePacket);
                 if(getOpCode(responsePacket) == (short)4){
+                    System.out.println("in logrq, getOpCode(responsePacket) == (short)4 true");
                     isLoggedIn = true;
                     connectedUsersIDS.add(connectionId);
                 }
+                System.out.println("in logrq, before conenction send");
                 connections.send(connectionId,responsePacket);
+                break;
             case 8: // DELRQ
                 connections.send(connectionId, DeleteRequestPacket.handleDeleteAndGetResponse(message, isLoggedIn,connections,connectedUsersIDS));
 
@@ -108,13 +113,13 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
             case 9:
             // These packets end with a zero .
             case 10: // DISC
-            byte[] responsePacketdisc = DiscPacket.createDiscPacket(isLoggedIn);
-            if(getOpCode(responsePacketdisc) == (short)4){
-                isLoggedIn = false;
-                connectedUsersIDS.remove(connectionId);
-                connectedUsers.remove("string username"); //TODO: find the string username
-            }
-            connections.send(connectionId,responsePacketdisc); 
+                byte[] responsePacketdisc = DiscPacket.createDiscPacket(isLoggedIn);
+                if(getOpCode(responsePacketdisc) == (short)4){
+                    isLoggedIn = false;
+                    connectedUsersIDS.remove(connectionId);
+                    connectedUsers.remove("string username"); //TODO: find the string username
+                }
+                connections.send(connectionId,responsePacketdisc);
         }
     }
 
@@ -134,5 +139,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
     {
         return isLoggedIn;
     }
+
+
 }
 

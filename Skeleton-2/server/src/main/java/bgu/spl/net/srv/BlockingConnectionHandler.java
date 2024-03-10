@@ -3,12 +3,15 @@ package bgu.spl.net.srv;
 import bgu.spl.net.api.BidiMessagingProtocol;
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.MessagingProtocol;
+import bgu.spl.net.impl.tftp.TftpProtocol;
 import bgu.spl.net.impl.tftp.TftpServer;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+
+import static bgu.spl.net.impl.tftp.TftpEncoderDecoder.printBytesInShortFormat;
 
 public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<T> {
 
@@ -34,13 +37,15 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             in = new BufferedInputStream(sock.getInputStream());
             out = new BufferedOutputStream(sock.getOutputStream());
 
-            this.protocol.start(connectionsMap.getNumberOfConnections() + 1, (Connections<T>) connectionsMap);
+            int connectionId = connectionsMap.getNumberOfConnections() + 1;
+            this.protocol.start(connectionId, (Connections<T>) connectionsMap);
+            connectionsMap.connect(connectionId, (ConnectionHandler<byte[]>) this);
 
             while (!protocol.shouldTerminate() && connected && (read = in.read()) >= 0) {
 
                 T nextMessage = encdec.decodeNextByte((byte) read);
                 if (nextMessage != null) {
-                    System.out.println("nextMessage: "+nextMessage);
+                    printBytesInShortFormat((byte[]) nextMessage);
                     protocol.process(nextMessage);
                 }
             }
