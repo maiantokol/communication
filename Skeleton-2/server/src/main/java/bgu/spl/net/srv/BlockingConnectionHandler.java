@@ -37,8 +37,10 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             this.protocol.start(connectionsMap.getNumberOfConnections() + 1, (Connections<T>) connectionsMap);
 
             while (!protocol.shouldTerminate() && connected && (read = in.read()) >= 0) {
+
                 T nextMessage = encdec.decodeNextByte((byte) read);
                 if (nextMessage != null) {
+                    System.out.println("nextMessage: "+nextMessage);
                     protocol.process(nextMessage);
                 }
             }

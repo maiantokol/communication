@@ -1,3 +1,7 @@
+package bgu.spl.net.impl.tftp.packets;
+
+import bgu.spl.net.impl.tftp.packets.ErrorPacket;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

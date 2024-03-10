@@ -1,3 +1,8 @@
+package bgu.spl.net.impl.tftp.packets;
+
+import bgu.spl.net.impl.tftp.packets.AckPacket;
+import bgu.spl.net.impl.tftp.packets.ErrorPacket;
+
 import java.nio.ByteBuffer;
 
 public class DiscPacket {

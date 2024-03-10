@@ -80,7 +80,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                         // If null, assuming the transfer is complete, you may want to clean up
                         ReadRequestPacket.session = null; // Reset for the next transfer
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     // Handle error, maybe send an error packet back???????????
                 }
@@ -94,6 +94,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
             connections.send(connectionId, DirqPacket.createDirqResponse(isLoggedIn));
 
             case 7: // LOGRQ
+                System.out.println("in logrq. message is: "+message);
                 byte[] responsePacket = LoginRequestPacket.handleLoginAndGetResponse(message);
                 if(getOpCode(responsePacket) == (short)4){
                     isLoggedIn = true;
@@ -120,7 +121,8 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
     @Override
     public boolean shouldTerminate() {
         // TODO implement this
-        throw new UnsupportedOperationException("Unimplemented method 'shouldTerminate'");
+        //throw new UnsupportedOperationException("Unimplemented method 'shouldTerminate'");
+        return false;
     }
 
     private short getOpCode(byte[] message)
