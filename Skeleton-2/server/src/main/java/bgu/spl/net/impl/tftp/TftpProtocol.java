@@ -8,9 +8,11 @@ import bgu.spl.net.impl.tftp.packets.*;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -71,7 +73,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                 // ACK packet  2 bytes for the opcode + 2 bytes for the block number
                 if (ReadRequestPacket.session != null)
                 {
-                try {
                     byte[] nextDataPacket = ReadRequestPacket.getNextPacketFromSession();
                     if (nextDataPacket != null) {
                         connections.send(connectionId, nextDataPacket);
@@ -80,10 +81,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                         // If null, assuming the transfer is complete, you may want to clean up
                         ReadRequestPacket.session = null; // Reset for the next transfer
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    // Handle error, maybe send an error packet back???????????
-                }
             }
             //TODO: ELSE???
             break;
@@ -91,7 +88,11 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
              
             case 5: // ERROR packet
             case 6: // DIRQ
-            connections.send(connectionId, DirqPacket.createDirqResponse(isLoggedIn));
+                    List<byte[]> packetlist = DirqPacket.createDirqResponse(isLoggedIn);
+                    for (byte[] bs : packetlist) 
+                    {
+                        connections.send(connectionId, bs); //it need to wait for an approve??
+                    }
 
             case 7: // LOGRQ
                 byte[] responsePacket = LoginRequestPacket.handleLoginAndGetResponse(message);
