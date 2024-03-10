@@ -107,6 +107,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                 connections.send(connectionId,responsePacket);
                 break;
             case 8: // DELRQ
+                System.out.println("[DELRQ]");
                 connections.send(connectionId, DeleteRequestPacket.handleDeleteAndGetResponse(message, isLoggedIn,connections,connectedUsersIDS));
 
 
