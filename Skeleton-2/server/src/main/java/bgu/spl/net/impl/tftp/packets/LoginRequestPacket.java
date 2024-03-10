@@ -13,6 +13,7 @@ public class LoginRequestPacket {
             return ErrorPacket.createErrorResponse(errorCode,errorMessage);
         }
         TftpProtocol.connectedUsers.add(username);
+
         return AckPacket.getAckPacket((short)0); // send ack for block 0
     }
 }

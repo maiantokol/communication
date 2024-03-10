@@ -2,10 +2,13 @@ package bgu.spl.net.impl.tftp.packets;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
+
+import bgu.spl.net.srv.Connections;
 
 public class DeleteRequestPacket {
-    private static final String Flies_Folder_Path = "../../../../../../../../../Flies/";
-    public static byte[] handleDeleteAndGetResponse(byte[] message, boolean isLoggedIn){
+    private static final String Flies_Folder_Path = "/Users/maiantokol/Library/Mobile Documents/com~apple~CloudDocs/Downloads/לימודים/שנה ב/spl/project3/Skeleton-2/server/Flies";
+    public static byte[] handleDeleteAndGetResponse(byte[] message, boolean isLoggedIn,Connections<byte[]> connections , Set<Integer> connectedUsersIDS){
         if(!isLoggedIn){
             return ErrorPacket.createErrorResponse((byte)6,"User not logged in");
         }
@@ -16,7 +19,11 @@ public class DeleteRequestPacket {
         if(!deleteFile(filename)){
             return ErrorPacket.createErrorResponse((byte)1,"File Not Found");
         }
-        return AckPacket.getAckPacket((byte)0);;
+        for (Integer id : connectedUsersIDS) 
+        {
+            connections.send(id, BcastPacket.createBcastPacket(true, filename));
+        }
+        return AckPacket.getAckPacket((byte)0);
 
     }
 

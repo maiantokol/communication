@@ -1,4 +1,5 @@
 package bgu.spl.net.srv;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 public class TftpConnectionsMap implements Connections<byte[]> {
 
@@ -27,6 +28,12 @@ public class TftpConnectionsMap implements Connections<byte[]> {
 
     public int getNumberOfConnections() {
         return connectionsMap.size();
+    }
+
+     public Integer[] getIdArray() 
+     {
+        Set<Integer> keySet = connectionsMap.keySet();
+        return keySet.toArray(new Integer[0]);
     }
 }
 
