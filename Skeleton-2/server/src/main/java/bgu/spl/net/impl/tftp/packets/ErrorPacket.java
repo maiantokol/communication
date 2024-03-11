@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 public class ErrorPacket {
 
         public static byte[] createErrorResponse(byte errorCode, String errorMessage) {
+            System.out.println("[createErrorResponse] errorMessage is: "+errorMessage);
             byte[] errorMessageBytes = errorMessage.getBytes(StandardCharsets.UTF_8);
             byte[] packet = new byte[4 + errorMessageBytes.length + 1];
             packet[0] = 0;

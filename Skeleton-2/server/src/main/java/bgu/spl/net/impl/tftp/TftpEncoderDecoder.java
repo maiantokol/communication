@@ -1,4 +1,5 @@
 package bgu.spl.net.impl.tftp;
+import java.io.File;
 import java.util.Arrays;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -10,23 +11,24 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
 
     private byte[] bytes = new byte[1 << 10]; //start with 1k
     private int len = 0;
+    private int numOfBytes = 0;
     private boolean isOpcodeComplete = false;
     private ByteBuffer lengthBuffer = ByteBuffer.wrap(new byte[2]);
     @Override
     public byte[] decodeNextByte(byte nextByte) { //who calls this function???? the server?
         //notice that the top 128 ascii characters have the same representation as their utf-8 counterparts
         //this allow us to do the following comparison
-        if (!isOpcodeComplete)
+
+        System.out.println("[decodeNextByte] got byte: "+(short)nextByte);
+        numOfBytes++;
+        pushByte(nextByte);
+        System.out.println("[decodeNextByte] bytes is: ");
+        printFirst10BytesInShortFormat(bytes);
+        if (numOfBytes > 2 && isCompletePacket())
         {
-            lengthBuffer.put(nextByte);
-            isOpcodeComplete = true;
-            lengthBuffer.flip();
-        }
-        if (isCompletePacket())
-        {
+            System.out.println("[decodeNextByte] isCompletePacket true ");
             return popPacket();
         }
-        pushByte(nextByte);
         return null;
     }
     @Override
@@ -51,12 +53,13 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
     private boolean isCompletePacket()
     {
         short opcode = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 0,2)).order(ByteOrder.BIG_ENDIAN).getShort();
+        System.out.println("[isCompletePacket] opcode is: "+opcode);
         switch (opcode) {
             case 1: // RRQ
             case 2: // WRQ
             case 7: // LOGRQ
             case 8: // DELRQ
-                return len > 2 && bytes[len - 1] == 0;
+                return len > 2 && bytes[len-1] == 0;
 
             case 3: // DATA
                 if (len < 4) return false;
@@ -95,4 +98,23 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
         }
         return builder.toString();
     }
+
+    public static void printBytesInShortFormat(byte[] message) {
+        System.out.print("byte array is: ");
+        for (byte b : message) {
+            System.out.print((short)b);
+            System.out.print(", ");
+        }
+        System.out.println(); // Move to the next line after printing all bytes
+    }
+
+    public static void printFirst10BytesInShortFormat(byte[] message) {
+        for (int i = 0; i < message.length && i < 10; i++) {
+            System.out.print((short)message[i]);
+            System.out.print(", ");
+        }
+        System.out.println(); // Move to the next line after printing
+    }
+
+
 }
