@@ -115,6 +115,4 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
         }
         System.out.println(); // Move to the next line after printing
     }
-
-
 }

@@ -84,6 +84,9 @@ private static int extractBlockNumberFromAck(byte[] ackPacket) {
  */
 package bgu.spl.net.impl.tftp.packets;
 
+import bgu.spl.net.impl.tftp.TftpEncoderDecoder;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -92,30 +95,53 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ReadRequestPacket {
 
-    private static final int DATA_SIZE = 512; // TFTP Data block size
-    private static final String FILES_DIRECTORY = "/path/to/your/files/";
-    public static FileTransferSession session;
+    private static final int BLOCK_SIZE = 512;
+    private static final String FILES_DIRECTORY = "C:\\Users\\idozA\\Desktop\\spl3\\communication\\Skeleton-2\\server\\Flies";
 
-    // Method to initiate the handling of a Read Request (RRQ)
-    public static byte[] handleReadAndGetResponse(byte[] message, boolean isLoggedIn) 
+    public static byte[] handleReadAndGetResponse(byte[] message, boolean isLoggedIn, State state)
     {
         if (!isLoggedIn) {
             return ErrorPacket.createErrorResponse((byte) 6, "User not logged in");
         }
+
         String filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
+        System.out.println("[handleReadAndGetResponse] filename is "+ filename);
         Path filePath = Paths.get(FILES_DIRECTORY, filename);
+        System.out.println("[handleReadAndGetResponse] filepath is "+ filePath.toString());
+
 
         if (!Files.exists(filePath)) {
             return ErrorPacket.createErrorResponse((byte) 1, "File not found");
         }
+        System.out.println("[handleReadAndGetResponse] file exists ");
 
-        // Assuming this is the first message for the RRQ, prepare the file for reading
+
+
         try {
-            session = new FileTransferSession(filePath.toString());
-            return session.getNextPacket(); // Send the first packet
+            List<byte[]> fileBlocks = readFileInBlocks(filePath.toString());
+            state.rrq = true;
+            state.filename = filename;
+            state.numOfBlocks = fileBlocks.size();
+            state.dataBlocks = fileBlocks;
+            state.blocksSent = 1;
+
+            System.out.println("[handleReadAndGetResponse] print file blocks:");
+            for(byte[] block : fileBlocks){
+                TftpEncoderDecoder.printBytesInShortFormat(block);
+                System.out.println();
+            }
+
+            // send first data block
+
+            return createDataPacket(state.blocksSent, state.dataBlocks.get(0), state.dataBlocks.get(0).length);
+
+
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             return ErrorPacket.createErrorResponse((byte) 1, "File not found");
@@ -127,69 +153,33 @@ public class ReadRequestPacket {
    
     }
 
-    public static byte[] getNextPacketFromSession() 
-    {
-        try
-        {
-            if (session != null) {
-                return session.getNextPacket();
+    public static List<byte[]> readFileInBlocks(String filePath) throws IOException {
+        File file = new File(filePath);
+        FileInputStream fis = new FileInputStream(file);
+        List<byte[]> fileBlocks = new ArrayList<>();
+
+        byte[] buffer = new byte[BLOCK_SIZE];
+        int bytesRead;
+        while ((bytesRead = fis.read(buffer)) != -1) {
+            if (bytesRead < BLOCK_SIZE) {
+                // Resize the last block to fit the remaining bytes
+                byte[] lastBlock = new byte[bytesRead];
+                System.arraycopy(buffer, 0, lastBlock, 0, bytesRead);
+                fileBlocks.add(lastBlock);
+            } else {
+                fileBlocks.add(buffer.clone());
             }
         }
-     catch (FileNotFoundException e) {
-        e.printStackTrace();
-        return ErrorPacket.createErrorResponse((byte) 1, "File not found");
-    } catch (IOException e) {
-        e.printStackTrace();
-        return ErrorPacket.createErrorResponse((byte) 0, "Error reading file");
+        fis.close();
+        return fileBlocks;
     }
-        
-        return null;
-    }
 
-
-
-   
-
-    // Inner class to manage file transfer sessions
-    static class FileTransferSession 
-    {
-        private FileInputStream fis;
-        private int blockNumber = 1; // Start with block number 1
-
-        public FileTransferSession(String filePath) throws FileNotFoundException {
-            this.fis = new FileInputStream(filePath);
-        }
-
-        public byte[] getNextPacket() throws IOException {
-            if (fis == null) {
-                return null; // End of the session
-            }
-
-            byte[] dataBlock = new byte[DATA_SIZE];
-            int bytesRead = fis.read(dataBlock);
-
-            if (bytesRead == -1) { // End of file
-                fis.close();
-                fis = null; // Mark the end of the session
-                return null;
-            }
-
-            // Adjust the last data block if it's smaller than DATA_SIZE
-            if (bytesRead < DATA_SIZE) 
-            {
-                dataBlock = ByteBuffer.wrap(dataBlock, 0, bytesRead).array();
-            }
-
-            return createDataPacket(blockNumber++, dataBlock, bytesRead);
-        }
-
-        private byte[] createDataPacket(int blockNumber, byte[] data, int bytesRead) {
-            ByteBuffer dataPacket = ByteBuffer.allocate(4 + 2 + bytesRead); // Opcode (2) + Block # (2) + Data Size (2) + Data
-            dataPacket.putShort((short) 3); // Opcode for DATA
-            dataPacket.putShort((short) bytesRead); // Include data size after opcode as per the new requirement
-            dataPacket.putShort((short) blockNumber); // Block number
-            dataPacket.put(data, 0, bytesRead); // Actual file data
-            return dataPacket.array();
-        }
+    public static byte[] createDataPacket(int blockNumber, byte[] data, int dataSize) {
+        ByteBuffer dataPacket = ByteBuffer.allocate(4 + 2 + dataSize); // Opcode (2) + Block # (2) + Data Size (2) + Data
+        dataPacket.putShort((short) 3); // Opcode for DATA
+        dataPacket.putShort((short) dataSize); // Include data size after opcode as per the new requirement
+        dataPacket.putShort((short) blockNumber); // Block number
+        dataPacket.put(data, 0, dataSize); // Actual file data
+        return dataPacket.array();
     }
 }

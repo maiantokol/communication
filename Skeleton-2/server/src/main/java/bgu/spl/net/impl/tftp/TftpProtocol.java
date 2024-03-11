@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static bgu.spl.net.impl.tftp.TftpEncoderDecoder.printBytesInShortFormat;
+import static bgu.spl.net.impl.tftp.packets.ReadRequestPacket.createDataPacket;
 
 public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
 
@@ -26,8 +27,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
     public static Set<String> connectedUsers = Collections.synchronizedSet(new HashSet<>());
     public static Set<Integer> connectedUsersIDS = Collections.synchronizedSet(new HashSet<>());
     public static UserConnections US = new UserConnections();
-    
-
+    public State state;
 
     public boolean isLoggedIn;
 
@@ -39,30 +39,21 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         this.connectionId = connectionId;
         this.connections = connections;
         this.isLoggedIn = false;
+        this.state = new State();
+
     }
 
     @Override
     public void process(byte[] message) 
     {
         // TODO implement this
-       boolean firstMessage=true;
-        //todo: create "is logged in" boolean, and change it to true after login, and if not logged in, return error packet in each case.
         short opcode = getOpCode(message);
         switch (opcode) {
             case 1: // RRQ
-                if (firstMessage)
-                   {
-                    byte[] responsePacket = ReadRequestPacket.handleReadAndGetResponse(message, isLoggedIn);
-                    if (responsePacket != null)
-                    {
-                        connections.send(connectionId, responsePacket);
-                        // Assuming handleReadAndGetResponse initiates a session and stores it as a class member
-                        firstMessage = false;
-                    }
-                }
-
-            //TODO: return an error
-
+                System.out.println("in RRQ");
+                printBytesInShortFormat(message);
+                connections.send(connectionId, ReadRequestPacket.handleReadAndGetResponse(message, isLoggedIn, this.state));
+                break;
             case 2: // WRQ
                 connections.send(connectionId, WriteRequsetPacket.handleWriteAndGetResponse(message, isLoggedIn));
 
@@ -71,26 +62,42 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                 connections.send(connectionId, DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn,connections,connectedUsersIDS));
 
             case 4: // ACK packet
-                // ACK packet  2 bytes for the opcode + 2 bytes for the block number
-                if (ReadRequestPacket.session != null)
-                {
-                try {
-                    byte[] nextDataPacket = ReadRequestPacket.getNextPacketFromSession();
-                    if (nextDataPacket != null) {
-                        connections.send(connectionId, nextDataPacket);
-                    } else 
-                    {
-                        // If null, assuming the transfer is complete, you may want to clean up
-                        ReadRequestPacket.session = null; // Reset for the next transfer
+                if(state.rrq || state.dirq){
+                    if (state.blocksSent == state.numOfBlocks){
+                        // finished rrq
+                        state.initState();
+                        return;
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    // Handle error, maybe send an error packet back???????????
-                    }
+
+                    state.blocksSent++;
+                    byte[] dataBlock = state.dataBlocks.get(state.blocksSent - 1);
+                    byte[] dataPacket =  createDataPacket(state.blocksSent, dataBlock , dataBlock.length);
+                    connections.send(connectionId, dataPacket);
                 }
+
+                break;
+
+                // ACK packet  2 bytes for the opcode + 2 bytes for the block number
+//                if (ReadRequestPacket.session != null)
+//                {
+//                try {
+//                    byte[] nextDataPacket = ReadRequestPacket.getNextPacketFromSession();
+//                    if (nextDataPacket != null) {
+//                        connections.send(connectionId, nextDataPacket);
+//                    } else
+//                    {
+//                        // If null, assuming the transfer is complete, you may want to clean up
+//                        ReadRequestPacket.session = null; // Reset for the next transfer
+//                    }
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    // Handle error, maybe send an error packet back???????????
+//                    }
+//                }
             case 5: // ERROR packet
             case 6: // DIRQ
-                connections.send(connectionId, DirqPacket.createDirqResponse(isLoggedIn));
+                connections.send(connectionId, DirqPacket.createDirqResponse(isLoggedIn, state));
+                break;
 
             case 7: // LOGRQ
                 System.out.println("in logrq, got message");
