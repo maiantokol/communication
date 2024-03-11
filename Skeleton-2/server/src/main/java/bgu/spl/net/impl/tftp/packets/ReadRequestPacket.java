@@ -125,7 +125,6 @@ public class ReadRequestPacket {
         try {
             List<byte[]> fileBlocks = readFileInBlocks(filePath.toString());
             state.rrq = true;
-            state.filename = filename;
             state.numOfBlocks = fileBlocks.size();
             state.dataBlocks = fileBlocks;
             state.blocksSent = 1;

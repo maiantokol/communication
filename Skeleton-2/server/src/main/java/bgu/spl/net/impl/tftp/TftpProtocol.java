@@ -55,11 +55,16 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                 connections.send(connectionId, ReadRequestPacket.handleReadAndGetResponse(message, isLoggedIn, this.state));
                 break;
             case 2: // WRQ
-                connections.send(connectionId, WriteRequsetPacket.handleWriteAndGetResponse(message, isLoggedIn));
+                connections.send(connectionId, WriteRequsetPacket.handleWriteAndGetResponse(message, isLoggedIn, state));
+                break;
 
 
             case 3: // DATA
-                connections.send(connectionId, DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn,connections,connectedUsersIDS));
+                if(!state.wrq){
+                    return;
+                }
+                connections.send(connectionId, DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn,state));
+                break;
 
             case 4: // ACK packet
                 if(state.rrq || state.dirq){
