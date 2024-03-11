@@ -11,6 +11,7 @@ public class AckPacket {
         // split the block number into two bytes and put it into the ackPacket
         ackPacket[2] = (byte) (blockNumber >> 8); // high byte of block number
         ackPacket[3] = (byte) (blockNumber);      // low byte of block number
+        System.out.println("razana");
         return ackPacket;
     }
 }

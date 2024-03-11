@@ -15,22 +15,26 @@ import java.nio.file.Paths;
 
 public class WriteRequsetPacket {
     static String filename; //static????
-    private static final String FILES_DIRECTORY = "/path/to/your/files/";
+    private static final String FILES_DIRECTORY = "C:\\Users\\user\\Desktop\\communication\\Skeleton-2\\server\\Flies";
 
     public static byte[]  handleWriteAndGetResponse(byte[] message, boolean isLoggedIn) 
     {
         if(!isLoggedIn){
             return ErrorPacket.createErrorResponse((byte)6,"User not logged in");
         }
+        filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
+
 
         //to chceck if the file already exists
-        Path filePath = Paths.get(FILES_DIRECTORY, filename);
+        Path filePath = Paths.get(FILES_DIRECTORY, "\\"+filename);
+        System.out.println("before if "+FILES_DIRECTORY+ "\\"+filename);
+
         if (Files.exists(filePath)) 
         {
+            System.out.println("in here in file exists");
             return ErrorPacket.createErrorResponse((byte) 1, "File already exists");
         }
-         filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
-         
+
         return AckPacket.getAckPacket((short)0); // send ack for block 0  
     
 }

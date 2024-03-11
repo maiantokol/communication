@@ -21,7 +21,7 @@ import java.util.Set;
 
 public class DataPacketHandler {
     private static final int DATA_SIZE = 512;
-    private static final String FILES_DIRECTORY = "/Users/maiantokol/Library/Mobile Documents/com~apple~CloudDocs/Downloads/לימודים/שנה ב/spl/project3/Skeleton-2/server/Flies";
+    private static final String FILES_DIRECTORY = "C:\\Users\\user\\Desktop\\communication\\Skeleton-2\\server\\Flies";
     Connections<byte[]> connections;
 
    static ArrayList<byte[]> arrayOfDataPacket = new ArrayList<byte[]>();
@@ -39,8 +39,8 @@ public class DataPacketHandler {
          //to return the final block number ens that we completed
 
          String filename = WriteRequsetPacket.getName();
-    Path filePath = Paths.get(FILES_DIRECTORY + filename);
-
+    Path filePath = Paths.get(FILES_DIRECTORY +"\\"+ filename);
+//
     try 
     {   
     Files.write(filePath, CompletePacket); // Write the bytes to the file
@@ -49,7 +49,7 @@ public class DataPacketHandler {
         e.printStackTrace();
     // Handle the exception here???????
         }
-    for (Integer id : connectedUsersIDS) 
+    for (Integer id : TftpProtocol.US.getAllIds())
     {
         
         connections.send(id, BcastPacket.createBcastPacket(true, filename));

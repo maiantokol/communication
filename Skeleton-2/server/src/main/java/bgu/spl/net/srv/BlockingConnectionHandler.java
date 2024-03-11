@@ -49,6 +49,8 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
                     protocol.process(nextMessage);
                 }
             }
+            connectionsMap.disconnect(connectionId);
+
 
         } catch (IOException ex) {
             ex.printStackTrace();

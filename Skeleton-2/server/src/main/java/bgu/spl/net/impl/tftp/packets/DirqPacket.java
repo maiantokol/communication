@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 public class DirqPacket {
 
     private static final short OPCODE = 6;
-    private static final String FILES_DIRECTORY = "/Users/maiantokol/Library/Mobile Documents/com~apple~CloudDocs/Downloads/לימודים/שנה ב/spl/project3/Skeleton-2/server/Flies"; 
+    private static final String FILES_DIRECTORY = "C:\\Users\\user\\Desktop\\communication\\Skeleton-2\\server\\Flies";
 
     public static byte[] createDirqResponse(boolean isLoggedIn) {
         if(!isLoggedIn){

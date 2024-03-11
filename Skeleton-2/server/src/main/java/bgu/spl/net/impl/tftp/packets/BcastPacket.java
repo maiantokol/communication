@@ -28,7 +28,7 @@ public class BcastPacket {
      {
         
         byte[] filenameBytes = filename.getBytes(StandardCharsets.UTF_8);
-        ByteBuffer buffer = ByteBuffer.allocate(4 + filenameBytes.length + 1);
+        ByteBuffer buffer = ByteBuffer.allocate(3 + filenameBytes.length + 1);
         buffer.putShort(OPCODE); // Opcode for BCAST
         buffer.put(isAdded ? FILE_ADDED : FILE_DELETED); // Added or deleted flag
         buffer.put(filenameBytes); // Filename
