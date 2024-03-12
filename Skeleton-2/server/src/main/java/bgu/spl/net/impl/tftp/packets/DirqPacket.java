@@ -6,6 +6,8 @@ import bgu.spl.net.impl.tftp.packets.ErrorPacket;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,8 +23,6 @@ public class DirqPacket {
             return ErrorPacket.createErrorResponse((byte)6,"User not logged in");
         }
         String directoryListing = getDirectoryListing(FILES_DIRECTORY);
-        System.out.println("directoryListing: ");
-        System.out.println(directoryListing);
         byte[] directoryListingBytes = directoryListing.getBytes();
         List<byte[]> chunks = sliceByteArray(directoryListingBytes, 512);
 

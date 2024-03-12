@@ -35,8 +35,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
     @Override
     public void start(int connectionId, Connections<byte[]> connections) 
     {
-        System.out.println("[start] connectionId: "+connectionId);
-        System.out.println("[start] connections: "+connections.toString());
         this.connectionId = connectionId;
         this.connections = connections;
         this.isLoggedIn = false;
@@ -51,8 +49,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         short opcode = getOpCode(message);
         switch (opcode) {
             case 1: // RRQ
-                System.out.println("in RRQ");
-                printBytesInShortFormat(message);
                 connections.send(connectionId, ReadRequestPacket.handleReadAndGetResponse(message, isLoggedIn, this.state));
                 break;
             case 2: // WRQ
@@ -65,22 +61,16 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                     return;
                 }
 
-                //connections.send(connectionId, DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn, state, connections, connectedUsersIDS));
-                byte[] response = DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn, state, connections, connectedUsersIDS);
+                byte[] response = DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn, state);
                 connections.send(connectionId, response);
                 boolean isAck = getOpCode(response) == (short)4;
-                System.out.println("[DATA] is ack is:"+isAck+" ,response[0] is:"+response[0]+" ,response[1] is:"+response[1]);
-                if(isAck){
-                    for (Integer id : connectedUsersIDS)
+                if(isAck && state.shouldReset){
+                    for (Integer id : US.getAllIds())
                     {
                         connections.send(id, BcastPacket.createBcastPacket(true, state.wrqFilename));
                     }
-                }
-
-                if(state.shouldReset){
                     state.initState();
                 }
-
                 break;
 
             case 4: // ACK packet
@@ -124,24 +114,21 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
             case 7: // LOGRQ
 
                 printBytesInShortFormat(message);
-                byte[] responsePacket = LoginRequestPacket.handleLoginAndGetResponse(message);
+                byte[] responsePacket = LoginRequestPacket.handleLoginAndGetResponse(message, connectionId);
 
                 printBytesInShortFormat(responsePacket);
                 if(getOpCode(responsePacket) == (short)4){
                     isLoggedIn = true;
-                    connectedUsersIDS.add(connectionId);
                 }
                 connections.send(connectionId,responsePacket);
                 break;
             case 8: // DELRQ
-                System.out.println("[DELRQ]");
                 byte[] delrqResponse = DeleteRequestPacket.handleDeleteAndGetResponse(message, isLoggedIn);
                 connections.send(connectionId, delrqResponse);
                 String filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
                 boolean isDelrqAck = getOpCode(delrqResponse) == (short)4;
-                System.out.println("[DELRQ] isDelrqAck is:"+isDelrqAck+" ,response[0] is:"+delrqResponse[0]+" ,response[1] is:"+delrqResponse[1]);
                 if(isDelrqAck){
-                    for (Integer id : connectedUsersIDS)
+                    for (Integer id : US.getAllIds())
                     {
                         connections.send(id, BcastPacket.createBcastPacket(false, filename));
                     }
@@ -151,14 +138,17 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
 
             case 9:
             // These packets end with a zero .
+                break;
             case 10: // DISC
                 byte[] responsePacketdisc = DiscPacket.createDiscPacket(isLoggedIn);
-                if(getOpCode(responsePacketdisc) == (short)4){
+                if(getOpCode(responsePacketdisc) == (short)4)
+                {
                     isLoggedIn = false;
-                    connectedUsersIDS.remove(connectionId);
-                    connectedUsers.remove("string username"); //TODO: find the string username
+                    US.removeUserById(connectionId);
+
                 }
                 connections.send(connectionId,responsePacketdisc);
+                break;
         }
     }
 

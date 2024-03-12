@@ -31,7 +31,6 @@ public class DeleteRequestPacket {
 
     public static boolean fileExists(String filename) {
         File file = new File(Flies_Folder_Path +"\\"+ filename);
-        System.out.println("Looking for file at: " + file.getAbsolutePath());
         return file.exists();
     }
 

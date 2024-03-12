@@ -24,7 +24,7 @@ import java.util.Set;
 public class DataPacketHandler {
     private static final int DATA_SIZE = 512;
 
-    public static byte [] handleDataAndGetResponse(byte[] message, boolean isLoggedIn, State state, Connections<byte[]> connections, Set<Integer> connectedUsersIDS) {
+    public static byte [] handleDataAndGetResponse(byte[] message, boolean isLoggedIn, State state) {
         if (!isLoggedIn) {
             return ErrorPacket.createErrorResponse((byte) 6, "User not logged in");
         }
@@ -32,22 +32,11 @@ public class DataPacketHandler {
         short dataSize = getDataSize(message);
         System.out.println("[handleDataAndGetResponse] dataSize is: "+ dataSize);
         byte[] data = Arrays.copyOfRange(message, 6, 6 + dataSize);
-        System.out.println("[handleDataAndGetResponse] this is the data array");
-        TftpEncoderDecoder.printBytesInShortFormat(data);;
         state.dataBlocks.add(data);
         short blockNumber = getBlockNumber(message);
         System.out.println("[handleDataAndGetResponse] block number is: "+blockNumber);
 
         if(dataSize < DATA_SIZE){
-            int totalSize2 = 0;
-            for (byte[] dataBlock : state.dataBlocks) {
-                totalSize2 += dataBlock.length;
-                System.out.println("[handleDataAndGetResponse] this is the dataBlock array");
-                TftpEncoderDecoder.printBytesInShortFormat(dataBlock);;
-
-            }
-            System.out.println("[handleDataAndGetResponse] total size 2 is"+totalSize2);
-
             int totalSize = 0;
             for (byte[] byteArray : state.dataBlocks) {
                 totalSize += byteArray.length;
@@ -60,10 +49,7 @@ public class DataPacketHandler {
                 System.arraycopy(byteArray, 0, combinedArray, currentPosition, byteArray.length);
                 currentPosition += byteArray.length;
             }
-            System.out.println("[handleDataAndGetResponse] this is the combined array");
-            TftpEncoderDecoder.printBytesInShortFormat(combinedArray);;
 
-            System.out.println("[handleDataAndGetResponse] state.wrqFilepath is  "+state.wrqFilepath);
             try (FileOutputStream fos = new FileOutputStream(state.wrqFilepath)) {
                 fos.write(combinedArray);
             } catch (IOException e) {
@@ -76,35 +62,7 @@ public class DataPacketHandler {
         return AckPacket.getAckPacket(blockNumber);
     }
 
-//private static void startFileTransfer(byte[] message)
-//{
-//
-//    byte[] dataPacket = createDataPacket(message);
-//     arrayOfDataPacket.add(dataPacket);
-//
-//
-//}
-//
-//private static byte[] createDataPacket (byte[] message)
-//{
-//    byte[] newArray = Arrays.copyOfRange(message, 6, message.length);
-//    return newArray;
-//}
-//
-//private static byte[] buldingPacket(ArrayList<byte[]> arr)
-//    {
-//// Determine the total size of the new array
-//    int totalSize = arrayOfDataPacket.stream().mapToInt(a -> a.length).sum();
-//    ByteBuffer buffer = ByteBuffer.allocate(totalSize);
-//
-//// Concatenate all byte arrays
-//for (byte[] packet : arrayOfDataPacket)
-//{
-//    buffer.put(packet);
-//}
-//
-//return buffer.array();
-//}
+
     private static short getDataSize(byte[] message)
     {
         return ByteBuffer.wrap(Arrays.copyOfRange(message, 2,4)).order(ByteOrder.BIG_ENDIAN).getShort();

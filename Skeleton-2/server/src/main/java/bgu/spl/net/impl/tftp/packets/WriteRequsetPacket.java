@@ -25,9 +25,9 @@ public class WriteRequsetPacket {
         }
 
         String filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
-        System.out.println("[handleWriteAndGetResponse] filename is "+ filename);
+
         Path filePath = Paths.get(FILES_DIRECTORY, filename);
-        System.out.println("[handleWriteAndGetResponse] filepath is "+ filePath.toString());
+
 
         if (Files.exists(filePath))
         {
