@@ -9,7 +9,7 @@ import bgu.spl.net.srv.Connections;
 
 public class DeleteRequestPacket {
     private static final String Flies_Folder_Path = "C:\\Users\\idozA\\Desktop\\spl3\\communication\\Skeleton-2\\server\\Flies";
-    public static byte[] handleDeleteAndGetResponse(byte[] message, boolean isLoggedIn,Connections<byte[]> connections , Set<Integer> connectedUsersIDS){
+    public static byte[] handleDeleteAndGetResponse(byte[] message, boolean isLoggedIn){
         System.out.println("[handleDeleteAndGetResponse] start, Flies_Folder_Path is "+ Flies_Folder_Path);
         if(!isLoggedIn){
             return ErrorPacket.createErrorResponse((byte)6,"User not logged in");
@@ -24,10 +24,7 @@ public class DeleteRequestPacket {
             return ErrorPacket.createErrorResponse((byte)1,"File Not Found");
         }
         System.out.println("[handleDeleteAndGetResponse] file deleted");
-        for (Integer id : connectedUsersIDS) 
-        {
-            connections.send(id, BcastPacket.createBcastPacket(true, filename));
-        }
+
         return AckPacket.getAckPacket((byte)0);
 
     }

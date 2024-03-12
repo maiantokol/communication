@@ -9,7 +9,9 @@ public class State {
     public int blocksSent = 0;
     public int numOfBlocks = 0;
     public int sentWrqBlocks = 0;
+    public String wrqFilename = "";
     public String wrqFilepath = "";
+    public boolean shouldReset = false;
     public List<byte[]> dataBlocks;
 
     public void initState(){
@@ -17,9 +19,11 @@ public class State {
         rrq = false;
         wrq = false;
         blocksSent = 0;
+        wrqFilename = "";
         wrqFilepath = "";
         numOfBlocks = 0;
         sentWrqBlocks = 0;
+        shouldReset = false;
         dataBlocks = null;
     }
 

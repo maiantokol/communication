@@ -8,6 +8,7 @@ import bgu.spl.net.impl.tftp.packets.*;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -63,7 +64,23 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                 if(!state.wrq){
                     return;
                 }
-                connections.send(connectionId, DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn,state));
+
+                //connections.send(connectionId, DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn, state, connections, connectedUsersIDS));
+                byte[] response = DataPacketHandler.handleDataAndGetResponse(message, isLoggedIn, state, connections, connectedUsersIDS);
+                connections.send(connectionId, response);
+                boolean isAck = getOpCode(response) == (short)4;
+                System.out.println("[DATA] is ack is:"+isAck+" ,response[0] is:"+response[0]+" ,response[1] is:"+response[1]);
+                if(isAck){
+                    for (Integer id : connectedUsersIDS)
+                    {
+                        connections.send(id, BcastPacket.createBcastPacket(true, state.wrqFilename));
+                    }
+                }
+
+                if(state.shouldReset){
+                    state.initState();
+                }
+
                 break;
 
             case 4: // ACK packet
@@ -105,22 +122,31 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                 break;
 
             case 7: // LOGRQ
-                System.out.println("in logrq, got message");
+
                 printBytesInShortFormat(message);
                 byte[] responsePacket = LoginRequestPacket.handleLoginAndGetResponse(message);
-                System.out.println("in logrq, response packet is");
+
                 printBytesInShortFormat(responsePacket);
                 if(getOpCode(responsePacket) == (short)4){
-                    System.out.println("in logrq, getOpCode(responsePacket) == (short)4 true");
                     isLoggedIn = true;
                     connectedUsersIDS.add(connectionId);
                 }
-                System.out.println("in logrq, before conenction send");
                 connections.send(connectionId,responsePacket);
                 break;
             case 8: // DELRQ
                 System.out.println("[DELRQ]");
-                connections.send(connectionId, DeleteRequestPacket.handleDeleteAndGetResponse(message, isLoggedIn,connections,connectedUsersIDS));
+                byte[] delrqResponse = DeleteRequestPacket.handleDeleteAndGetResponse(message, isLoggedIn);
+                connections.send(connectionId, delrqResponse);
+                String filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
+                boolean isDelrqAck = getOpCode(delrqResponse) == (short)4;
+                System.out.println("[DELRQ] isDelrqAck is:"+isDelrqAck+" ,response[0] is:"+delrqResponse[0]+" ,response[1] is:"+delrqResponse[1]);
+                if(isDelrqAck){
+                    for (Integer id : connectedUsersIDS)
+                    {
+                        connections.send(id, BcastPacket.createBcastPacket(false, filename));
+                    }
+                }
+                break;
 
 
             case 9:

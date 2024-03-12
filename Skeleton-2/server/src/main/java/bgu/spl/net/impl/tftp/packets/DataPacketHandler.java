@@ -24,7 +24,7 @@ import java.util.Set;
 public class DataPacketHandler {
     private static final int DATA_SIZE = 512;
 
-    public static byte [] handleDataAndGetResponse(byte[] message, boolean isLoggedIn, State state) {
+    public static byte [] handleDataAndGetResponse(byte[] message, boolean isLoggedIn, State state, Connections<byte[]> connections, Set<Integer> connectedUsersIDS) {
         if (!isLoggedIn) {
             return ErrorPacket.createErrorResponse((byte) 6, "User not logged in");
         }
@@ -70,8 +70,7 @@ public class DataPacketHandler {
                 System.out.println("[handleDataAndGetResponse] error "+e.toString());
                 return ErrorPacket.createErrorResponse((byte) 0, "Could not write file");
             }
-            state.initState();
-            // send bcast
+            state.shouldReset = true;
         }
 
         return AckPacket.getAckPacket(blockNumber);

@@ -35,6 +35,7 @@ public class WriteRequsetPacket {
         }
         state.wrq= true;
         state.dataBlocks = new ArrayList<>();
+        state.wrqFilename = filename;
         state.wrqFilepath = String.valueOf(filePath);
         return AckPacket.getAckPacket((short)0); // send ack for block 0
 }
