@@ -12,36 +12,32 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public class WriteRequsetPacket {
-    static String filename; //static????
-    private static final String FILES_DIRECTORY = "C:\\Users\\user\\Desktop\\communication\\Skeleton-2\\server\\Flies";
 
-    public static byte[]  handleWriteAndGetResponse(byte[] message, boolean isLoggedIn) 
+    private static final String FILES_DIRECTORY =  "C:\\Users\\idozA\\Desktop\\spl3\\communication\\Skeleton-2\\server\\Flies";
+
+    public static byte[]  handleWriteAndGetResponse(byte[] message, boolean isLoggedIn, State state)
     {
         if(!isLoggedIn){
             return ErrorPacket.createErrorResponse((byte)6,"User not logged in");
         }
-        filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
+
+        String filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
+
+        Path filePath = Paths.get(FILES_DIRECTORY, filename);
 
 
-        //to chceck if the file already exists
-        Path filePath = Paths.get(FILES_DIRECTORY, "\\"+filename);
-        System.out.println("before if "+FILES_DIRECTORY+ "\\"+filename);
-
-        if (Files.exists(filePath)) 
+        if (Files.exists(filePath))
         {
-            System.out.println("in here in file exists");
             return ErrorPacket.createErrorResponse((byte) 1, "File already exists");
         }
-
-        return AckPacket.getAckPacket((short)0); // send ack for block 0  
-    
-}
-
-public static String getName()
-{
-    return filename;
+        state.wrq= true;
+        state.dataBlocks = new ArrayList<>();
+        state.wrqFilename = filename;
+        state.wrqFilepath = String.valueOf(filePath);
+        return AckPacket.getAckPacket((short)0); // send ack for block 0
 }
 
 

@@ -1,70 +1,56 @@
 package bgu.spl.net.impl.tftp;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import bgu.spl.net.impl.tftp.ListeningThread;
+//import bgu.spl.net.impl.tftp.KeyboardThread;
+
+import java.io.*;
+import java.net.Socket;
 
 public class TftpClient {
-    private DatagramSocket socket;
-    private InetAddress serverAddress;
-    private int serverPort;
-    // Assuming TftpClientEncoderDecoder is similar to TftpEncoderDecoder but adapted for client
-    private TftpClientEncoderDecoder encoderDecoder;
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            args = new String[]{"localhost"};
+        }
+        try(Socket socket = new Socket(args[0], 7777);
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
 
-    public TftpClient(String serverIp, int serverPort) throws Exception {
-        this.serverAddress = InetAddress.getByName(serverIp);
-        this.serverPort = serverPort;
-        this.socket = new DatagramSocket();
-        this.encoderDecoder = new TftpClientEncoderDecoder();
-    }
+            TftpClientEncoderDecoder encdec = new TftpClientEncoderDecoder();
+            TftpClientProtocol protocol = new TftpClientProtocol();
 
-    public void send(String message) throws IOException {
-        byte[] bytesToSend = encoderDecoder.encode(message.getBytes());
-        DatagramPacket packet = new DatagramPacket(bytesToSend, bytesToSend.length, serverAddress, serverPort);
-        socket.send(packet);
-    }
+            ListeningThread listeningThread = new ListeningThread(in, out, protocol, encdec);
 
-    public void receive() throws IOException {
-        byte[] buffer = new byte[516]; // TFTP max packet size
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-        socket.receive(packet);
-        // Process received packet...
-    }
 
-    public void close() {
-        socket.close();
-    }
-
-    public static void main(String[] args) throws Exception {
-        TftpClient client = new TftpClient("localhost", 7777);
-// open socket
-        Thread keybordThread = new Thread(() -> {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-                String line;
-                while ((line = reader.readLine()) != null && !line.equalsIgnoreCase("quit")) {
-                    client.send(line); // This needs to be adapted for your TFTP operations
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                client.close();
-            }
-        });
-
-        Thread ListeningThread = new Thread(() -> {
+            BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+            listeningThread.start();
             try {
-                while (true) { // Could also use a condition to allow stopping the thread
-                    client.receive(); // Implement to process received data accordingly
+                String userInput;
+                while (!socket.isClosed() && (userInput = keyboard.readLine()) != null) {
+                    if (userInput != null) {
+                        out.write(encdec.encode(userInput.getBytes()));
+                        socket.getOutputStream().flush();
+                    }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+                System.out.println("Error in KeyboardThread: " + e.getMessage());
+            } finally {
 
-        keybordThread.start();
-        ListeningThread.start();
+                try {
+                    keyboard.close();
+                } catch (IOException e) {
+                    // Ignore as we are closing the thread
+                }
+            }
+
+
+           // ListeningThread.start();
+
+
+            //keyboardThread.join();
+            listeningThread.join();
+
+        } catch (IOException | InterruptedException e){
+            e.printStackTrace();
+        }
     }
 }

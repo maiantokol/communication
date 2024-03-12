@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 public class ReadRequestPacket
  {
-    
+
    private static final int DATA_SIZE = 512; // TFTP Data block size
     private static final String FILES_DIRECTORY = "/Users/maiantokol/Library/Mobile Documents/com~apple~CloudDocs/Downloads/לימודים/שנה ב/spl/project3/Skeleton-2/server/Flies";
     private static boolean firstMessage = true; //to check if good
@@ -22,7 +22,7 @@ public class ReadRequestPacket
         {
             String filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
             file = new File(FILES_DIRECTORY + filename);
-    
+
             if (!file.exists()) {
                 return ErrorPacket.createErrorResponse((byte) 1, "File not found");
             }
@@ -34,10 +34,10 @@ else
         ByteBuffer buffer = ByteBuffer.allocate(DATA_SIZE);
         int bytesRead;
 
-        while ((bytesRead = fis.read(buffer.array())) != -1) { 
+        while ((bytesRead = fis.read(buffer.array())) != -1) {
             int blockNumber = extractBlockNumberFromAck(message)+1;
             byte[] packet= createDataPacket( blockNumber, buffer.array(), bytesRead);
-        
+
             buffer.clear(); // Clear the buffer for the next read
             return packet;
         }
@@ -46,8 +46,8 @@ else
         return ErrorPacket.createErrorResponse((byte) 0, "Error reading file"); //to check
     }
 }
-    
-      
+
+
 
         return null; // This will never be reached
     }
@@ -82,9 +82,11 @@ private static int extractBlockNumberFromAck(byte[] ackPacket) {
  }
 
  */
-package bgu.spl.net.impl.tftp.packets;
+package bgu.spl.net.impl.tftp;
 
-import bgu.spl.net.impl.tftp.TftpEncoderDecoder;
+import bgu.spl.net.impl.tftp.StateClient;
+import bgu.spl.net.impl.tftp.TftpClientProtocol;
+
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -98,61 +100,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ReadRequestPacket {
+public class WritePacket {
 
     private static final int BLOCK_SIZE = 512;
+
+    //files of client
     private static final String FILES_DIRECTORY = "C:\\Users\\idozA\\Desktop\\spl3\\communication\\Skeleton-2\\server\\Flies";
 
-    public static byte[] handleReadAndGetResponse(byte[] message, boolean isLoggedIn, State state)
-    {
-        if (!isLoggedIn) {
-            return ErrorPacket.createErrorResponse((byte) 6, "User not logged in");
-        }
-
-        String filename = new String(message, 2, message.length - 3, StandardCharsets.UTF_8);
-        System.out.println("[handleReadAndGetResponse] filename is "+ filename);
-        Path filePath = Paths.get(FILES_DIRECTORY, filename);
-        System.out.println("[handleReadAndGetResponse] filepath is "+ filePath.toString());
-
-
-        if (!Files.exists(filePath)) {
-            return ErrorPacket.createErrorResponse((byte) 1, "File not found");
-        }
-        System.out.println("[handleReadAndGetResponse] file exists ");
-
-
-
-        try {
-            List<byte[]> fileBlocks = readFileInBlocks(filePath.toString());
-            state.rrq = true;
-            state.numOfBlocks = fileBlocks.size();
-            state.dataBlocks = fileBlocks;
-            state.blocksSent = 1;
-
-            System.out.println("[handleReadAndGetResponse] print file blocks:");
-            for(byte[] block : fileBlocks){
-                TftpEncoderDecoder.printBytesInShortFormat(block);
-                System.out.println();
-            }
-
-            // send first data block
-
-            return createDataPacket(state.blocksSent, state.dataBlocks.get(0), state.dataBlocks.get(0).length);
-
-
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return ErrorPacket.createErrorResponse((byte) 1, "File not found");
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ErrorPacket.createErrorResponse((byte) 0, "Error reading file");
-        }
-
-   
-    }
-
-    public static List<byte[]> readFileInBlocks(String filePath) throws IOException {
+    public static List<byte[]> writeFileInBlocks(String filePath) throws IOException {
         File file = new File(filePath);
         FileInputStream fis = new FileInputStream(file);
         List<byte[]> fileBlocks = new ArrayList<>();

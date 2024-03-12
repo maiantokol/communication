@@ -8,7 +8,6 @@ public class UserConnections {
     private ConcurrentHashMap<String, Integer> userMap = new ConcurrentHashMap<>();
 
     public void addUser(String username, int id) {
-        System.out.println("size user map"+userMap.size() );
         userMap.put(username, id);
     }
 
@@ -16,7 +15,6 @@ public class UserConnections {
         return userMap.get(username);
     }
     public boolean contains(String username) {
-        System.out.println("id"+userMap.get(username));
         return userMap.get(username)!=null;
     }
 

@@ -1,6 +1,7 @@
-package bgu.spl.net.impl.tftp.packets;
+package bgu.spl.net.impl.tftp;
 
-public class AckPacket {
+public class AckPacketClient {
+
     public static byte[] getAckPacket(short blockNumber) {
         byte[] ackPacket = new byte[4];
 

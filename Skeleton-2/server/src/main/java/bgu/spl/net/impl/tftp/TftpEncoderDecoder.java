@@ -19,14 +19,11 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
         //notice that the top 128 ascii characters have the same representation as their utf-8 counterparts
         //this allow us to do the following comparison
 
-        System.out.println("[decodeNextByte] got byte: "+(short)nextByte);
+       // System.out.println("[decodeNextByte] got byte: "+(short)nextByte);
         numOfBytes++;
         pushByte(nextByte);
-        System.out.println("[decodeNextByte] bytes is: ");
-        printFirst10BytesInShortFormat(bytes);
         if (numOfBytes > 2 && isCompletePacket())
         {
-            System.out.println("[decodeNextByte] isCompletePacket true ");
             return popPacket();
         }
         return null;
@@ -53,7 +50,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
     private boolean isCompletePacket()
     {
         short opcode = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 0,2)).order(ByteOrder.BIG_ENDIAN).getShort();
-        System.out.println("[isCompletePacket] opcode is: "+opcode);
+
         switch (opcode) {
             case 1: // RRQ
             case 2: // WRQ
@@ -115,6 +112,4 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
         }
         System.out.println(); // Move to the next line after printing
     }
-
-
 }

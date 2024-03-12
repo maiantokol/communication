@@ -1,7 +1,5 @@
 package bgu.spl.net.impl.tftp.packets;
 
-import bgu.spl.net.impl.tftp.TftpProtocol;
-import bgu.spl.net.impl.tftp.TftpServer;
 import bgu.spl.net.impl.tftp.packets.AckPacket;
 import bgu.spl.net.impl.tftp.packets.ErrorPacket;
 

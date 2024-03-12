@@ -16,6 +16,7 @@ public class TftpClientEncoderDecoder implements MessageEncoderDecoder<byte[]> {
 
     @Override
     public byte[] decodeNextByte(byte nextByte) {
+       // System.out.println("got byte "+nextByte);
 
 
         numOfBytes++;
@@ -28,8 +29,9 @@ public class TftpClientEncoderDecoder implements MessageEncoderDecoder<byte[]> {
         return null;
     }
 
-        public byte[] encode(String message) {
-        String[] parts = message.split(" ", 2);
+        public byte[] encode(byte[] message) {
+
+        String[] parts = new String(message).split(" ", 2);
         String command = parts[0].toUpperCase();
         String argument = parts.length > 1 ? parts[1] : null;
 
@@ -39,6 +41,7 @@ public class TftpClientEncoderDecoder implements MessageEncoderDecoder<byte[]> {
             case "DELRQ":
                 return createDelRqPacket(argument);
             case "RRQ":
+                StateClient.fileName=argument; //how to fix
                 return createRrqPacket(argument);
             case "WRQ":
                 return createWrqPacket(argument);
@@ -141,7 +144,7 @@ public class TftpClientEncoderDecoder implements MessageEncoderDecoder<byte[]> {
     private boolean isCompletePacketClient()
     {
         short opcode = ByteBuffer.wrap(Arrays.copyOfRange(bytes, 0,2)).order(ByteOrder.BIG_ENDIAN).getShort();
-        System.out.println("[isCompletePacket] opcode is: "+opcode);
+        //System.out.println("[isCompletePacket] opcode is: "+opcode);
         switch (opcode) {
             case 1: // RRQ
             case 2: // WRQ

@@ -1,8 +1,6 @@
-package bgu.spl.net.impl.tftp.packets;
+package bgu.spl.net.impl.tftp;
 
-import bgu.spl.net.impl.tftp.TftpEncoderDecoder;
-import bgu.spl.net.impl.tftp.TftpProtocol;
-import bgu.spl.net.srv.Connections;
+import bgu.spl.net.impl.tftp.StateClient;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,14 +18,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
 
+import static bgu.spl.net.impl.tftp.TftpClientProtocol.ErrorPacket;
 
-public class DataPacketHandler {
+
+public class DataPacketClient {
     private static final int DATA_SIZE = 512;
 
-    public static byte [] handleDataAndGetResponse(byte[] message, boolean isLoggedIn, State state) {
-        if (!isLoggedIn) {
-            return ErrorPacket.createErrorResponse((byte) 6, "User not logged in");
-        }
+    public static byte [] DataPacket(byte[] message, StateClient state) {
 
         short dataSize = getDataSize(message);
         System.out.println("[handleDataAndGetResponse] dataSize is: "+ dataSize);
@@ -50,16 +47,16 @@ public class DataPacketHandler {
                 currentPosition += byteArray.length;
             }
 
-            try (FileOutputStream fos = new FileOutputStream(state.wrqFilepath)) {
+            try (FileOutputStream fos = new FileOutputStream(state.rrqFilepath)) {
                 fos.write(combinedArray);
             } catch (IOException e) {
                 System.out.println("[handleDataAndGetResponse] error "+e.toString());
-                return ErrorPacket.createErrorResponse((byte) 0, "Could not write file");
+                return ErrorPacket((byte) 0, "Could not write file");
             }
             state.shouldReset = true;
         }
 
-        return AckPacket.getAckPacket(blockNumber);
+        return AckPacketClient.getAckPacket(blockNumber);
     }
 
 
@@ -68,14 +65,14 @@ public class DataPacketHandler {
         return ByteBuffer.wrap(Arrays.copyOfRange(message, 2,4)).order(ByteOrder.BIG_ENDIAN).getShort();
     }
 
-     private static short getBlockNumber(byte[] message)
-        {
-            return ByteBuffer.wrap(Arrays.copyOfRange(message, 4,6)).order(ByteOrder.BIG_ENDIAN).getShort();
-        }
+    private static short getBlockNumber(byte[] message)
+    {
+        return ByteBuffer.wrap(Arrays.copyOfRange(message, 4,6)).order(ByteOrder.BIG_ENDIAN).getShort();
+    }
 
 
 
-  
+
 
 
 }
