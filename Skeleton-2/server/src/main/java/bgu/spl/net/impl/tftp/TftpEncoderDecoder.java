@@ -22,7 +22,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
        // System.out.println("[decodeNextByte] got byte: "+(short)nextByte);
         numOfBytes++;
         pushByte(nextByte);
-        if (numOfBytes > 2 && isCompletePacket())
+        if (isCompletePacket())
         {
             return popPacket();
         }
