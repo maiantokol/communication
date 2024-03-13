@@ -23,6 +23,7 @@ public class DirqPacket {
             return ErrorPacket.createErrorResponse((byte)6,"User not logged in");
         }
         String directoryListing = getDirectoryListing(FILES_DIRECTORY);
+
         byte[] directoryListingBytes = directoryListing.getBytes();
         List<byte[]> chunks = sliceByteArray(directoryListingBytes, 512);
 
